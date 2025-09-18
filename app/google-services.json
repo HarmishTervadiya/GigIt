@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "78406874350",
+    "project_id": "gig-it-84",
+    "storage_bucket": "gig-it-84.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:78406874350:android:234c0429fcb1ad491f6fff",
+        "android_client_info": {
+          "package_name": "com.example.gigit"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBn_tl06XaPux5dxVtch1-41vMlGpExRbs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
