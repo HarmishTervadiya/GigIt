@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -14,7 +15,7 @@ import com.example.gigit.data.repository.TaskRepository
 import com.example.gigit.data.repository.UserRepository
 import com.example.gigit.data.source.TaskSource
 import com.example.gigit.data.source.UserSource
-import com.example.gigit.features.active_gigs.ActiveGigsScreen
+import com.example.gigit.features.activeGigs.ActiveGigsScreen
 import com.example.gigit.features.feed.HomeScreen
 import com.example.gigit.features.notifications.NotificationsScreen
 import com.example.gigit.features.profile.MyProfileScreen
@@ -30,7 +31,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun MainScreen(mainNavController: NavController) {
     val bottomNavController = rememberNavController()
-    val sheetState = rememberModalBottomSheetState()
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var showBottomSheet by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
@@ -60,10 +61,11 @@ fun MainScreen(mainNavController: NavController) {
     if (showBottomSheet) {
         ModalBottomSheet(
             onDismissRequest = { showBottomSheet = false },
-            sheetState = sheetState
+            sheetState = sheetState,
+            containerColor = Color.White
         ) {
             AddGigSheetContent(
-                onPostGig = { title, description, location, amount ->
+                onPostGig = { title, description, category, location, rewardType, amount ->
                     scope.launch {
                         val currentUser = Firebase.auth.currentUser
                         if (currentUser != null) {
@@ -73,15 +75,15 @@ fun MainScreen(mainNavController: NavController) {
                             val newTask = Task(
                                 title = title,
                                 description = description,
-                                rewardType = Constants.REWARD_TYPE_CASH,
-                                rewardAmount = amount.toDoubleOrNull() ?: 0.0,
+                                category = category,
+                                rewardType = rewardType,
+                                rewardAmount = if (rewardType == Constants.REWARD_TYPE_CASH) amount.toDoubleOrNull() ?: 0.0 else 0.0,
                                 status = Constants.TASK_STATUS_OPEN,
                                 posterId = currentUser.uid,
-                                // Use fresh data from Firestore profile for consistency
+                                participantIds = listOf(currentUser.uid),
                                 posterUsername = userProfile?.username ?: currentUser.displayName ?: "A User",
                                 posterPaymentSuccessRate = userProfile?.paymentSuccessRate ?: 100.0,
                                 locationString = location
-                                // createdAt is handled by the server via @ServerTimestamp
                             )
                             // Call the repository to save the new task
                             taskRepository.postNewTask(newTask)

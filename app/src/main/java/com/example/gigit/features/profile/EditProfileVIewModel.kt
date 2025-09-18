@@ -50,12 +50,12 @@ class EditProfileViewModel(
         }
     }
 
-    fun saveProfile(username: String, upiId: String) {
+    fun saveProfile(username: String, upiId: String, mobileNumber: String) {
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true) }
             val userId = authRepository.getCurrentUserId()
             if (userId != null) {
-                when (userRepository.updateUserProfile(userId, username, upiId)) {
+                when (userRepository.updateUserProfile(userId, username, upiId, mobileNumber)) {
                     is Resource.Success -> _uiState.update { it.copy(isSaving = false, saveSuccess = true) }
                     is Resource.Error -> _uiState.update { it.copy(isSaving = false, error = "Failed to save profile.") }
                     else -> _uiState.update { it.copy(isSaving = false) }

@@ -15,6 +15,7 @@ data class Task(
     val rewardType: String = "",
     val rewardAmount: Double = 0.0,
     val status: String = "",
+    val category: String = "Other",
 
     val posterId: String = "",
     val taskerId: String? = null, // Null until a tasker accepts

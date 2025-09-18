@@ -1,6 +1,7 @@
 package com.example.gigit.data.repository
 
 import com.example.gigit.data.model.Message
+import com.example.gigit.data.model.Review
 import com.example.gigit.data.model.Task
 import com.example.gigit.data.source.TaskSource
 import com.example.gigit.util.Resource
@@ -14,11 +15,10 @@ class TaskRepository(private val source: TaskSource) {
     }
 
     // MODIFIED: Now passes the userId down to the source
-    fun getOpenTasks(currentUserId: String): Flow<Resource<List<Task>>> {
-        return source.getOpenTasks(currentUserId)
+    fun getOpenTasks(currentUserId: String, category:String): Flow<Resource<List<Task>>> {
+        return source.getOpenTasks(currentUserId, category)
     }
 
-    // --- NEW FUNCTIONS ---
     suspend fun getTaskDetails(taskId: String): Resource<Task?> {
         return source.getTaskDetails(taskId)
     }
@@ -45,5 +45,9 @@ class TaskRepository(private val source: TaskSource) {
 
     suspend fun submitReview(review: com.example.gigit.data.model.Review): Resource<Unit> {
         return source.submitReview(review)
+    }
+
+    fun getReviewsForUser(userId: String): Flow<Resource<List<Review>>> {
+        return source.getReviewsForUser(userId)
     }
 }

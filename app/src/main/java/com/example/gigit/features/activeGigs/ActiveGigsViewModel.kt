@@ -1,8 +1,9 @@
-package com.example.gigit.features.active_gigs
+package com.example.gigit.features.activeGigs
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.CreationExtras
 import com.example.gigit.data.model.Task
 import com.example.gigit.data.repository.AuthRepository
 import com.example.gigit.data.repository.TaskRepository
@@ -22,7 +23,9 @@ import kotlinx.coroutines.flow.update
 
 data class ActiveGigsUiState(
     val isLoading: Boolean = true,
-    val activeGigs: List<Task> = emptyList(),
+    val postedGigs: List<Task> = emptyList(),
+    val acceptedGigs: List<Task> = emptyList(),
+    val selectedTabIndex: Int = 0,
     val error: String? = null
 )
 
@@ -46,11 +49,24 @@ class ActiveGigsViewModel(
         }
         taskRepository.getActiveGigs(userId).onEach { result ->
             when (result) {
-                is Resource.Success -> _uiState.update { it.copy(isLoading = false, activeGigs = result.data ?: emptyList()) }
+                is Resource.Success -> {
+                    val allGigs = result.data ?: emptyList()
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            postedGigs = allGigs.filter { task -> task.posterId == userId },
+                            acceptedGigs = allGigs.filter { task -> task.taskerId == userId }
+                        )
+                    }
+                }
                 is Resource.Error -> _uiState.update { it.copy(isLoading = false, error = result.message) }
                 is Resource.Loading -> _uiState.update { it.copy(isLoading = true) }
             }
         }.launchIn(viewModelScope)
+    }
+
+    fun onTabSelected(index: Int) {
+        _uiState.update { it.copy(selectedTabIndex = index) }
     }
 }
 
@@ -62,7 +78,8 @@ object ActiveGigsViewModelFactory : ViewModelProvider.Factory {
     private val userRepository by lazy { UserRepository(userSource) }
     private val authRepository by lazy { AuthRepository(authSource, userRepository) }
 
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+    // --- THIS IS THE CORRECTED FUNCTION ---
+    override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T {
         if (modelClass.isAssignableFrom(ActiveGigsViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
             return ActiveGigsViewModel(taskRepository, authRepository) as T
@@ -70,3 +87,4 @@ object ActiveGigsViewModelFactory : ViewModelProvider.Factory {
         throw IllegalArgumentException("Unknown ViewModel class")
     }
 }
+

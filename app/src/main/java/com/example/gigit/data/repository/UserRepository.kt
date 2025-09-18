@@ -22,7 +22,7 @@ class UserRepository(private val source: UserSource) {
         source.updateUpiId(userId, upiId)
     }
 
-    suspend fun updateUserProfile(userId: String, username: String, upiId: String): Resource<Unit> {
-        return source.updateUserProfile(userId, username, upiId)
+    suspend fun updateUserProfile(userId: String, username: String, upiId: String, mobileNumber: String): Resource<Unit> {
+        return source.updateUserProfile(userId, username, upiId, mobileNumber)
     }
 }

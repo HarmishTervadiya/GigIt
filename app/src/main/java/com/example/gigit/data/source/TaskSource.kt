@@ -1,6 +1,7 @@
 package com.example.gigit.data.source
 
 import com.example.gigit.data.model.Message
+import com.example.gigit.data.model.Review
 import com.example.gigit.data.model.Task
 import com.example.gigit.util.Constants
 import com.example.gigit.util.Resource
@@ -28,30 +29,31 @@ class TaskSource(private val firestore: FirebaseFirestore) {
     }
 
     // This provides a real-time stream of open tasks
-    fun getOpenTasks(currentUserId: String): Flow<Resource<List<Task>>> = callbackFlow {
+    fun getOpenTasks(currentUserId: String, category: String): Flow<Resource<List<Task>>> = callbackFlow {
         val twentyFourHoursAgo = Date(System.currentTimeMillis() - TimeUnit.HOURS.toMillis(24))
 
-        val listenerRegistration = firestore.collection(Constants.TASKS_COLLECTION)
+        var query: Query = firestore.collection(Constants.TASKS_COLLECTION)
             .whereEqualTo("status", Constants.TASK_STATUS_OPEN)
             .whereGreaterThan("createdAt", twentyFourHoursAgo)
-            // This is the new filter to exclude the user's own posts
             .whereNotEqualTo("posterId", currentUserId)
-            .orderBy("createdAt", Query.Direction.DESCENDING)
+
+        // Apply the category filter only if it's not "All"
+        if (category != "All") {
+            query = query.whereEqualTo("category", category)
+        }
+
+        val listenerRegistration = query.orderBy("createdAt", Query.Direction.DESCENDING)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
-                    trySend(Resource.Error(error.localizedMessage ?: "Failed to listen for tasks."))
+                    trySend(Resource.Error(error.localizedMessage))
                     close(error)
-                    return@addSnapshotListener
-                }
-                if (snapshot != null) {
-                    val tasks = snapshot.toObjects<Task>()
-                    trySend(Resource.Success(tasks))
+                } else if (snapshot != null) {
+                    trySend(Resource.Success(snapshot.toObjects()))
                 }
             }
         awaitClose { listenerRegistration.remove() }
     }
 
-    // --- NEW FUNCTIONS ---
     suspend fun getTaskDetails(taskId: String): Resource<Task?> {
         return try {
             val document =
@@ -68,6 +70,7 @@ class TaskSource(private val firestore: FirebaseFirestore) {
                 mapOf(
                     "status" to Constants.TASK_STATUS_RESERVED,
                     "taskerId" to taskerId,
+                    "participantIds" to FieldValue.arrayUnion(taskerId),
                     "acceptedAt" to FieldValue.serverTimestamp()
                 )
             ).await()
@@ -109,18 +112,13 @@ class TaskSource(private val firestore: FirebaseFirestore) {
     }
 
     fun getActiveGigs(userId: String): Flow<Resource<List<Task>>> = callbackFlow {
+
         val listener = firestore.collection(Constants.TASKS_COLLECTION)
-            .whereIn("status", listOf(Constants.TASK_STATUS_RESERVED))
-            // This query finds tasks where the user is either the poster OR the tasker.
-            // Note: Firestore requires a composite index for this query.
-            .whereArrayContainsAny("participantIds", listOf(userId))
+            .whereEqualTo("status", Constants.TASK_STATUS_RESERVED) // Find only active tasks
+            .whereArrayContains("participantIds", userId) // Where the user is a participant
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
-                    trySend(
-                        Resource.Error(
-                            error.localizedMessage ?: "Failed to listen for active gigs."
-                        )
-                    )
+                    trySend(Resource.Error(error.localizedMessage ?: "Failed to listen for active gigs."))
                     return@addSnapshotListener
                 }
                 if (snapshot != null) {
@@ -129,6 +127,7 @@ class TaskSource(private val firestore: FirebaseFirestore) {
             }
         awaitClose { listener.remove() }
     }
+
 
     suspend fun markTaskAsCompleted(taskId: String): Resource<Unit> {
         return try {
@@ -150,5 +149,19 @@ class TaskSource(private val firestore: FirebaseFirestore) {
         } catch (e: Exception) {
             Resource.Error(e.localizedMessage)
         }
+    }
+
+    fun getReviewsForUser(userId: String): Flow<Resource<List<Review>>> = callbackFlow {
+        val listener = firestore.collection(Constants.REVIEWS_COLLECTION)
+            .whereEqualTo("revieweeId", userId)
+            .orderBy("createdAt", Query.Direction.DESCENDING)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    trySend(Resource.Error(error.localizedMessage))
+                } else if (snapshot != null) {
+                    trySend(Resource.Success(snapshot.toObjects()))
+                }
+            }
+        awaitClose { listener.remove() }
     }
 }

@@ -3,8 +3,10 @@ package com.example.gigit.features.chat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.CreationExtras
 import com.example.gigit.data.model.Message
 import com.example.gigit.data.model.Task
+import com.example.gigit.data.model.User
 import com.example.gigit.data.repository.AuthRepository
 import com.example.gigit.data.repository.TaskRepository
 import com.example.gigit.data.repository.UserRepository
@@ -15,41 +17,60 @@ import com.example.gigit.util.Resource
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.firestore
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 data class ChatUiState(
     val isLoading: Boolean = true,
     val task: Task? = null,
+    val currentUser: User? = null,
+    val otherUser: User? = null,
     val messages: List<Message> = emptyList(),
-    val error: String? = null
+    val error: String? = null,
+    val showPostGigDialog: Boolean = false,
+    val reviewSubmitted: Boolean = false
 )
 
 class ChatViewModel(
     private val taskId: String,
     private val taskRepository: TaskRepository,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val userRepository: UserRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ChatUiState())
     val uiState = _uiState.asStateFlow()
 
     init {
-        loadTaskDetails()
+        loadTaskAndUserDetails()
         listenForMessages()
     }
 
-    private fun loadTaskDetails() {
+    private fun loadTaskAndUserDetails() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            when (val result = taskRepository.getTaskDetails(taskId)) {
-                is Resource.Success -> _uiState.update { it.copy(isLoading = false, task = result.data) }
-                is Resource.Error -> _uiState.update { it.copy(isLoading = false, error = result.message) }
-                else -> _uiState.update { it.copy(isLoading = false) }
+            val currentUserId = authRepository.getCurrentUserId()
+            if (currentUserId == null) {
+                _uiState.update { it.copy(isLoading = false, error = "User not logged in.") }
+                return@launch
+            }
+
+            // Fetch current user's profile for avatar
+            val currentUserProfile = userRepository.getUserProfile(currentUserId)
+
+            val taskResult = taskRepository.getTaskDetails(taskId)
+            if (taskResult is Resource.Success && taskResult.data != null) {
+                val task = taskResult.data
+                val otherUserId = if (currentUserId == task.posterId) task.taskerId else task.posterId
+
+                if (otherUserId != null) {
+                    val otherUser = userRepository.getUserProfile(otherUserId)
+                    _uiState.update { it.copy(isLoading = false, task = task, otherUser = otherUser, currentUser = currentUserProfile) }
+                } else {
+                    _uiState.update { it.copy(isLoading = false, task = task, currentUser = currentUserProfile) }
+                }
+            } else {
+                _uiState.update { it.copy(isLoading = false, error = "Task not found.") }
             }
         }
     }
@@ -70,6 +91,7 @@ class ChatViewModel(
         viewModelScope.launch {
             val message = Message(senderId = currentUserId, text = text)
             taskRepository.sendMessage(taskId, message)
+            // Here you would also create a notification for the other user
         }
     }
 
@@ -77,27 +99,34 @@ class ChatViewModel(
         return authRepository.getCurrentUserId()
     }
 
-    fun markTaskAsCompleted() {
-        viewModelScope.launch {
-            taskRepository.markTaskAsCompleted(taskId)
-            // In a real app, you might navigate or show a success message
-        }
+    fun onMarkCompleteClicked() {
+        _uiState.update { it.copy(showPostGigDialog = true) }
+    }
+
+    fun dismissPostGigDialog() {
+        _uiState.update { it.copy(showPostGigDialog = false) }
+    }
+
+    fun submitReviewAndComplaint(rating: Int, comment: String, fileComplaint: Boolean) {
+        // Here you would add the full backend logic for submitting review and complaint
+        _uiState.update { it.copy(showPostGigDialog = false, reviewSubmitted = true) }
     }
 }
 
 class ChatViewModelFactory(private val taskId: String) : ViewModelProvider.Factory {
     private val taskSource by lazy { TaskSource(Firebase.firestore) }
     private val taskRepository by lazy { TaskRepository(taskSource) }
-    private val authSource by lazy { AuthSource(Firebase.auth) }
     private val userSource by lazy { UserSource(Firebase.firestore) }
     private val userRepository by lazy { UserRepository(userSource) }
+    private val authSource by lazy { AuthSource(Firebase.auth) }
     private val authRepository by lazy { AuthRepository(authSource, userRepository) }
 
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+    override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T {
         if (modelClass.isAssignableFrom(ChatViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return ChatViewModel(taskId, taskRepository, authRepository) as T
+            return ChatViewModel(taskId, taskRepository, authRepository, userRepository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }
 }
+

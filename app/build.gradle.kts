@@ -54,7 +54,7 @@ dependencies {
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services.auth)
     implementation(libs.googleid)
-    implementation("com.google.firebase:firebase-bom:34.2.0")
+    implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.messaging)
     implementation(libs.firebase.inappmessaging.display)
@@ -67,8 +67,7 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
-
-
+    implementation("io.coil-kt:coil-compose:2.6.0")
     //Navigation
     implementation(libs.androidx.navigation.compose)
     // Material3 for UI components

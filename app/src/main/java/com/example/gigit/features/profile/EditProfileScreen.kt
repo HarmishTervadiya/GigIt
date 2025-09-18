@@ -1,12 +1,14 @@
 package com.example.gigit.features.profile
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -20,8 +22,8 @@ fun EditProfileScreen(navController: NavController) {
 
     var username by remember { mutableStateOf("") }
     var upiId by remember { mutableStateOf("") }
+    var mobileNumber by remember { mutableStateOf("") }
 
-    // When the user profile is loaded, update the text fields
     LaunchedEffect(uiState.user) {
         uiState.user?.let {
             username = it.username
@@ -80,8 +82,17 @@ fun EditProfileScreen(navController: NavController) {
                         modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(modifier = Modifier.height(24.dp))
+                    OutlinedTextField(
+                        value = mobileNumber,
+                        onValueChange = { mobileNumber = it },
+                        label = { Text("Mobile Number") },
+                        modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                        singleLine = true
+                    )
+                    Spacer(modifier = Modifier.height(24.dp))
                     Button(
-                        onClick = { viewModel.saveProfile(username, upiId) },
+                        onClick = { viewModel.saveProfile(username, upiId, mobileNumber) },
                         enabled = !uiState.isSaving,
                         modifier = Modifier.fillMaxWidth()
                     ) {

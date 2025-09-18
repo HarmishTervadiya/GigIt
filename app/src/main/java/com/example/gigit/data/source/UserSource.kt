@@ -36,11 +36,12 @@ class UserSource(private val firestore: FirebaseFirestore) {
             .update("upiId", upiId).await()
     }
 
-    suspend fun updateUserProfile(userId: String, username: String, upiId: String): Resource<Unit> {
+    suspend fun updateUserProfile(userId: String, username: String, upiId: String, mobileNumber: String): Resource<Unit> {
         return try {
             val updates = mapOf(
                 "username" to username,
-                "upiId" to upiId
+                "upiId" to upiId,
+                "mobileNumber" to mobileNumber
             )
             firestore.collection(Constants.USERS_COLLECTION).document(userId)
                 .update(updates).await()

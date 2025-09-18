@@ -11,10 +11,8 @@ import com.example.gigit.features.chat.ChatScreen
 import com.example.gigit.features.main.MainScreen
 import com.example.gigit.features.profile.EditProfileScreen
 import com.example.gigit.features.profile.UserProfileScreen
-import com.example.gigit.features.task_details.TaskDetailsScreen
+import com.example.gigit.features.taskDetails.TaskDetailsScreen
 import com.example.gigit.ui.components.RouteGuard
-
-// ... import other screens like TaskDetailsScreen, ChatScreen, etc.
 
 @Composable
 fun AppNavigation() {
