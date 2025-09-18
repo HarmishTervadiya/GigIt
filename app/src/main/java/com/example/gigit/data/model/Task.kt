@@ -1,11 +1,14 @@
 package com.example.gigit.data.model
 
+import com.google.firebase.firestore.DocumentId
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.GeoPoint
 import com.google.firebase.firestore.ServerTimestamp
 import java.util.Date
 
 data class Task(
+    @DocumentId
+    val id: String = "",
     val title: String = "",
     val description: String = "",
     val imageUrl: String? = null, // Optional
@@ -15,7 +18,7 @@ data class Task(
 
     val posterId: String = "",
     val taskerId: String? = null, // Null until a tasker accepts
-
+    val participantIds: List<String> = emptyList(), // For querying active gigs
     // Denormalized data for fast feed loading
     val posterUsername: String = "",
     val posterPaymentSuccessRate: Double = 0.0,

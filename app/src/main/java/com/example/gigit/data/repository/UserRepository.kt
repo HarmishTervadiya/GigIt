@@ -12,4 +12,12 @@ class UserRepository(private val source: UserSource) {
     suspend fun updateFcmToken(userId: String, token: String) {
         source.updateFcmToken(userId, token)
     }
+
+    suspend fun getUserProfile(userId: String): User? {
+        return source.getUserProfile(userId)
+    }
+
+    suspend fun updateUpiId(userId: String, upiId: String) {
+        source.updateUpiId(userId, upiId)
+    }
 }

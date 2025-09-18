@@ -10,7 +10,11 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.gigit.data.model.Task
-import com.example.gigit.features.activeGigs.ActiveGigsScreen
+import com.example.gigit.data.repository.TaskRepository
+import com.example.gigit.data.repository.UserRepository
+import com.example.gigit.data.source.TaskSource
+import com.example.gigit.data.source.UserSource
+import com.example.gigit.features.active_gigs.ActiveGigsScreen
 import com.example.gigit.features.feed.HomeScreen
 import com.example.gigit.features.notifications.NotificationsScreen
 import com.example.gigit.features.profile.MyProfileScreen
@@ -19,6 +23,7 @@ import com.example.gigit.ui.components.AddGigSheetContent
 import com.example.gigit.util.Constants
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
+import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -29,8 +34,12 @@ fun MainScreen(mainNavController: NavController) {
     var showBottomSheet by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
+    // Manually create the repository instances needed for this screen's logic
+    val taskRepository = remember { TaskRepository(TaskSource(Firebase.firestore)) }
+    val userRepository = remember { UserRepository(UserSource(Firebase.firestore)) }
+
+
     Scaffold(
-        // The Scaffold is now much cleaner, with no FAB logic
         bottomBar = {
             GigItBottomNavBar(
                 navController = bottomNavController,
@@ -42,7 +51,6 @@ fun MainScreen(mainNavController: NavController) {
             NavHost(navController = bottomNavController, startDestination = BottomNavScreen.Home.route) {
                 composable(BottomNavScreen.Home.route) { HomeScreen(mainNavController) }
                 composable(BottomNavScreen.ActiveGigs.route) { ActiveGigsScreen(mainNavController) }
-                // Note: The "AddGig" route is not needed here as it's an action, not a screen.
                 composable(BottomNavScreen.Notifications.route) { NotificationsScreen(mainNavController) }
                 composable(BottomNavScreen.MyProfile.route) { MyProfileScreen(mainNavController) }
             }
@@ -55,37 +63,40 @@ fun MainScreen(mainNavController: NavController) {
             sheetState = sheetState
         ) {
             AddGigSheetContent(
-             onPostGig = { title, description, location, amount ->
-                 scope.launch {
-                     // 1. Get the current user
-                     val currentUser = Firebase.auth.currentUser
-                     if (currentUser != null) {
-                         // 2. Create the Task object from the form data
-                         val newTask = Task(
-                             title = title,
-                             description = description,
-                             rewardType = Constants.REWARD_TYPE_CASH,
-                             rewardAmount = amount.toDoubleOrNull() ?: 0.0,
-                             status = Constants.TASK_STATUS_OPEN,
-                             posterId = currentUser.uid,
-                             posterUsername = currentUser.displayName
-                                 ?: "A User", // Or fetch from your user profile
-                             locationString = location
-                             // createdAt is handled by the server via @ServerTimestamp
-                         )
-                         // 3. Call the repository to save the new task
-//                            taskRepository.postNewTask(newTask)
-                     }
+                onPostGig = { title, description, location, amount ->
+                    scope.launch {
+                        val currentUser = Firebase.auth.currentUser
+                        if (currentUser != null) {
+                            // Fetch the full user profile to get the latest data
+                            val userProfile = userRepository.getUserProfile(currentUser.uid)
 
-                     // 4. Hide the bottom sheet after the work is done
-                     sheetState.hide()
-                 }.invokeOnCompletion {
-                     if (!sheetState.isVisible) {
-                         showBottomSheet = false
-                     }
-                 }
-             }
+                            val newTask = Task(
+                                title = title,
+                                description = description,
+                                rewardType = Constants.REWARD_TYPE_CASH,
+                                rewardAmount = amount.toDoubleOrNull() ?: 0.0,
+                                status = Constants.TASK_STATUS_OPEN,
+                                posterId = currentUser.uid,
+                                // Use fresh data from Firestore profile for consistency
+                                posterUsername = userProfile?.username ?: currentUser.displayName ?: "A User",
+                                posterPaymentSuccessRate = userProfile?.paymentSuccessRate ?: 100.0,
+                                locationString = location
+                                // createdAt is handled by the server via @ServerTimestamp
+                            )
+                            // Call the repository to save the new task
+                            taskRepository.postNewTask(newTask)
+                        }
+
+                        // Hide the bottom sheet after the work is done
+                        sheetState.hide()
+                    }.invokeOnCompletion {
+                        if (!sheetState.isVisible) {
+                            showBottomSheet = false
+                        }
+                    }
+                }
             )
         }
     }
 }
+
