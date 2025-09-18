@@ -61,7 +61,6 @@ object MyProfileViewModelFactory : ViewModelProvider.Factory {
     private val userSource by lazy { UserSource(Firebase.firestore) }
     private val userRepository by lazy { UserRepository(userSource) }
     private val authSource by lazy { AuthSource(Firebase.auth) }
-    // Note: AuthRepository does not need UserRepository for this ViewModel's functions
     private val authRepository by lazy { AuthRepository(authSource, userRepository) }
 
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -72,3 +71,4 @@ object MyProfileViewModelFactory : ViewModelProvider.Factory {
         throw IllegalArgumentException("Unknown ViewModel class")
     }
 }
+

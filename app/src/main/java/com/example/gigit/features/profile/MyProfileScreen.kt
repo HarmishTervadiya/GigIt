@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -43,23 +44,34 @@ fun MyProfileScreen(mainNavController: NavController) {
                 }
             }
             uiState.user != null -> {
-                // Here you would build the UI to display the user's profile,
-                // including their username, stats, and a tab for their reviews.
-                // You can also add the logout button here.
-                Column(modifier = Modifier.padding(paddingValues).fillMaxSize()) {
+                Column(
+                    modifier = Modifier
+                        .padding(paddingValues)
+                        .fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    // You will build your main profile UI here (stats, reviews tab, etc.)
+                    Spacer(modifier = Modifier.weight(1f)) // Pushes button to the bottom
                     Text("Welcome, ${uiState.user!!.username}")
-                    // ... More UI components
-                    Button(onClick = {
-                        viewModel.signOut()
-                        // Navigate back to the auth flow after logout
-                        mainNavController.navigate(Screen.Auth.route) {
-                            popUpTo(Screen.Main.route) { inclusive = true }
-                        }
-                    }) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    OutlinedButton(
+                        onClick = {
+                            viewModel.signOut()
+                            // Navigate to auth flow and clear the back stack
+                            mainNavController.navigate(Screen.Auth.route) {
+                                popUpTo(Screen.Main.route) { inclusive = true }
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
+                    ) {
                         Text("Sign Out")
                     }
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
             }
         }
     }
 }
+

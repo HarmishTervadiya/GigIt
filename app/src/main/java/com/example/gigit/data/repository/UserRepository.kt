@@ -2,6 +2,7 @@ package com.example.gigit.data.repository
 
 import com.example.gigit.data.model.User
 import com.example.gigit.data.source.UserSource
+import com.example.gigit.util.Resource
 
 class UserRepository(private val source: UserSource) {
 
@@ -19,5 +20,9 @@ class UserRepository(private val source: UserSource) {
 
     suspend fun updateUpiId(userId: String, upiId: String) {
         source.updateUpiId(userId, upiId)
+    }
+
+    suspend fun updateUserProfile(userId: String, username: String, upiId: String): Resource<Unit> {
+        return source.updateUserProfile(userId, username, upiId)
     }
 }
