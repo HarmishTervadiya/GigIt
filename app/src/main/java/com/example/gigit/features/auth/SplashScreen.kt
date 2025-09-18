@@ -8,6 +8,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -17,8 +18,8 @@ import com.example.gigit.navigation.Screen
 
 @Composable
 fun SplashScreen(navController: NavController) {
-    // Correctly create the ViewModel using our manual factory
-    val viewModel: SplashViewModel = viewModel(factory = SplashViewModelFactory)
+    val context = LocalContext.current
+    val viewModel: SplashViewModel = viewModel(factory = SplashViewModelFactory(context))
     val navigateState by viewModel.navigateState.collectAsStateWithLifecycle()
 
     LaunchedEffect(navigateState) {
@@ -34,6 +35,11 @@ fun SplashScreen(navController: NavController) {
                 }
             }
             SplashDestination.None -> { /* Do nothing */ }
+            SplashDestination.Auth -> {
+                navController.navigate(Screen.Main.route) {
+                    popUpTo(Screen.Auth.route) { inclusive = true }
+                }
+            }
         }
     }
 

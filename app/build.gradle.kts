@@ -56,6 +56,8 @@ dependencies {
     implementation(libs.googleid)
     implementation("com.google.firebase:firebase-bom:34.2.0")
     implementation(libs.firebase.firestore)
+    implementation(libs.firebase.messaging)
+    implementation(libs.firebase.inappmessaging.display)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

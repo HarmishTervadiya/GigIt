@@ -31,7 +31,7 @@ fun GigItBottomNavBar(
         items.forEach { screen ->
             val isSelected = currentDestination?.hierarchy?.any { it.route == screen.route } == true
             NavigationBarItem(
-                label = { Text(screen.label) },
+//                label = { Text(screen.label) },
                 icon = { Icon(screen.icon, contentDescription = screen.label) },
                 selected = isSelected,
                 onClick = {

@@ -20,7 +20,7 @@ import com.example.gigit.ui.components.RouteGuard
 fun AppNavigation() {
     val navController = rememberNavController()
 
-    NavHost(navController = navController, startDestination = Screen.Splash.route) {
+    NavHost(navController = navController, startDestination = Screen.Main.route) {
         // --- Pre-Login Flow ---
         composable(route = Screen.Splash.route) { SplashScreen(navController) }
         composable(route = Screen.Onboarding.route) { OnboardingScreen(navController) }
