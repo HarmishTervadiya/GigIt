@@ -51,42 +51,67 @@ fun AddGigSheetContent(
         modifier = Modifier
             .background(Color.White)
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-            .verticalScroll(scrollState)
-            ,
+            .padding(horizontal = 16.dp, vertical = 6.dp)
+            .verticalScroll(scrollState),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Handle to indicate a draggable sheet
-//        Surface(
-//            modifier = Modifier.size(width = 40.dp, height = 4.dp),
-//            shape = MaterialTheme.shapes.extraLarge,
-//            color = BorderGray
-//        ) {}
+        // Visual handle for sheet
+        Surface(
+            modifier = Modifier.size(width = 32.dp, height = 3.dp),
+            shape = MaterialTheme.shapes.extraLarge,
+            color = BorderGray
+        ) {}
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
-        Text("Create a New Gig", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(bottom = 12.dp))
+        Text(
+            "Create a New Gig",
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
 
+        // Title Field
+        Text(
+            "Task Title",
+            style = MaterialTheme.typography.labelMedium,
+            color = TextGray,
+            modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)
+        )
         OutlinedTextField(
             value = title,
             onValueChange = { title = it },
-            label = { Text("Task Title") },
+            placeholder = { Text("Enter task title") },
             leadingIcon = { Icon(Icons.Default.Title, contentDescription = "Title", modifier = Modifier.size(20.dp)) },
-            modifier = Modifier.fillMaxWidth().height(52.dp),
+            modifier = Modifier.fillMaxWidth().height(56.dp),
             singleLine = true,
             colors = textFieldColors
         )
         Spacer(modifier = Modifier.height(12.dp))
 
+        // Description Field
+        Text(
+            "Description",
+            style = MaterialTheme.typography.labelMedium,
+            color = TextGray,
+            modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)
+        )
         OutlinedTextField(
             value = description,
             onValueChange = { description = it },
-            label = { Text("Description") },
+            placeholder = { Text("Describe your task in detail") },
             modifier = Modifier.fillMaxWidth().height(100.dp),
+            maxLines = 4,
             colors = textFieldColors
         )
         Spacer(modifier = Modifier.height(12.dp))
 
+        // Category Field
+        Text(
+            "Category",
+            style = MaterialTheme.typography.labelMedium,
+            color = TextGray,
+            modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)
+        )
         ExposedDropdownMenuBox(
             expanded = isCategoryMenuExpanded,
             onExpandedChange = { isCategoryMenuExpanded = !isCategoryMenuExpanded }
@@ -95,10 +120,10 @@ fun AddGigSheetContent(
                 value = selectedCategory,
                 onValueChange = {},
                 readOnly = true,
-                label = { Text("Category") },
+                placeholder = { Text("Select category") },
                 leadingIcon = { Icon(Icons.Default.Category, contentDescription = "Category", modifier = Modifier.size(20.dp)) },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isCategoryMenuExpanded) },
-                modifier = Modifier.menuAnchor().fillMaxWidth().height(52.dp),
+                modifier = Modifier.menuAnchor().fillMaxWidth().height(56.dp),
                 colors = textFieldColors
             )
             ExposedDropdownMenu(
@@ -106,63 +131,115 @@ fun AddGigSheetContent(
                 onDismissRequest = { isCategoryMenuExpanded = false }
             ) {
                 categories.forEach { category ->
-                    DropdownMenuItem(text = { Text(category) }, onClick = {
-                        selectedCategory = category
-                        isCategoryMenuExpanded = false
-                    })
+                    DropdownMenuItem(
+                        text = { Text(category) },
+                        onClick = {
+                            selectedCategory = category
+                            isCategoryMenuExpanded = false
+                        }
+                    )
                 }
             }
         }
         Spacer(modifier = Modifier.height(12.dp))
 
+        // Location Field
+        Text(
+            "Location",
+            style = MaterialTheme.typography.labelMedium,
+            color = TextGray,
+            modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)
+        )
         OutlinedTextField(
             value = location,
             onValueChange = { location = it },
-            label = { Text("Location") },
+            placeholder = { Text("Enter location") },
             leadingIcon = { Icon(Icons.Default.LocationOn, contentDescription = "Location", modifier = Modifier.size(20.dp)) },
-            modifier = Modifier.fillMaxWidth().height(52.dp),
+            modifier = Modifier.fillMaxWidth().height(56.dp),
             singleLine = true,
             colors = textFieldColors
         )
         Spacer(modifier = Modifier.height(12.dp))
 
-        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth().height(40.dp)) {
+        // Reward Type Selection
+        Text(
+            "Reward Type",
+            style = MaterialTheme.typography.labelMedium,
+            color = TextGray,
+            modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)
+        )
+        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth().height(44.dp)) {
             SegmentedButton(
                 selected = rewardType == Constants.REWARD_TYPE_CASH,
                 onClick = { rewardType = Constants.REWARD_TYPE_CASH },
                 shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
-                colors = SegmentedButtonDefaults.colors(activeContainerColor = BluePrimary, activeContentColor = White)
-            ) { Text("Cash") }
+                colors = SegmentedButtonDefaults.colors(
+                    activeContainerColor = BluePrimary,
+                    activeContentColor = White
+                )
+            ) {
+                Text("Cash", style = MaterialTheme.typography.bodyMedium)
+            }
             SegmentedButton(
                 selected = rewardType == Constants.REWARD_TYPE_FAVOR,
                 onClick = { rewardType = Constants.REWARD_TYPE_FAVOR },
                 shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
-                colors = SegmentedButtonDefaults.colors(activeContainerColor = BluePrimary, activeContentColor = White)
-            ) { Text("Favor") }
+                colors = SegmentedButtonDefaults.colors(
+                    activeContainerColor = BluePrimary,
+                    activeContentColor = White
+                )
+            ) {
+                Text("Favor", style = MaterialTheme.typography.bodyMedium)
+            }
         }
         Spacer(modifier = Modifier.height(12.dp))
 
+        // Amount Field
+        Text(
+            if (rewardType == Constants.REWARD_TYPE_CASH) "Amount (₹)" else "Favor Details",
+            style = MaterialTheme.typography.labelMedium,
+            color = TextGray,
+            modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)
+        )
         OutlinedTextField(
             value = amount,
             onValueChange = { amount = it },
-            label = { Text("Reward Amount") },
-            enabled = rewardType == Constants.REWARD_TYPE_CASH,
-            leadingIcon = { Icon(Icons.Default.CurrencyRupee, contentDescription = "Amount", modifier = Modifier.size(20.dp)) },
-            modifier = Modifier.fillMaxWidth().height(52.dp),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            placeholder = {
+                Text(if (rewardType == Constants.REWARD_TYPE_CASH) "Enter amount in rupees" else "Describe the favor")
+            },
+            leadingIcon = {
+                Icon(
+                    if (rewardType == Constants.REWARD_TYPE_CASH) Icons.Default.CurrencyRupee else Icons.Default.Handshake,
+                    contentDescription = "Amount",
+                    modifier = Modifier.size(20.dp)
+                )
+            },
+            modifier = Modifier.fillMaxWidth().height(56.dp),
+            keyboardOptions = if (rewardType == Constants.REWARD_TYPE_CASH) {
+                KeyboardOptions(keyboardType = KeyboardType.Number)
+            } else {
+                KeyboardOptions.Default
+            },
             singleLine = true,
             colors = textFieldColors
         )
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
         Button(
-            onClick = { onPostGig(title, description, selectedCategory, location, rewardType, amount) },
-            modifier = Modifier.fillMaxWidth().height(48.dp),
-            enabled = title.isNotBlank() && description.isNotBlank() && (rewardType == Constants.REWARD_TYPE_FAVOR || amount.isNotBlank())
+            onClick = {
+                onPostGig(title, description, selectedCategory, location, rewardType, amount)
+            },
+            modifier = Modifier.fillMaxWidth().height(44.dp),
+            enabled = title.isNotBlank() &&
+                    description.isNotBlank() &&
+                    location.isNotBlank() &&
+                    (rewardType == Constants.REWARD_TYPE_FAVOR || amount.isNotBlank()),
+            colors = ButtonDefaults.buttonColors(containerColor = BluePrimary)
         ) {
-            Text("Post Gig")
+            Text("Post Gig", style = MaterialTheme.typography.labelLarge)
         }
-        Spacer(modifier = Modifier.height(16.dp))
+
+        // Bottom padding for keyboard avoidance
+        Spacer(modifier = Modifier.height(WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 8.dp))
     }
 }
-

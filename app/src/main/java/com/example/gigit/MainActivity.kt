@@ -16,20 +16,39 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.gigit.navigation.AppNavigation
 import com.example.gigit.ui.theme.GigItTheme
+import com.example.gigit.util.PaymentResult
+import com.example.gigit.util.PaymentResultBus
+import com.razorpay.PaymentResultListener
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 
-class MainActivity : ComponentActivity() {
+class MainActivity : ComponentActivity(), PaymentResultListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        val taskIdFromNotification = intent.getStringExtra("task_id_extra")
+
         setContent {
             GigItTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = Color.White
+                    color = MaterialTheme.colorScheme.background
                 ) {
-                    AppNavigation()
+                    AppNavigation(startTaskId = taskIdFromNotification)
                 }
             }
+        }
+    }
+
+    override fun onPaymentSuccess(paymentId: String?) {
+        GlobalScope.launch {
+            PaymentResultBus.postResult(PaymentResult.Success(paymentId))
+        }
+    }
+
+    override fun onPaymentError(code: Int, description: String?) {
+        GlobalScope.launch {
+            PaymentResultBus.postResult(PaymentResult.Error)
         }
     }
 }

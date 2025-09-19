@@ -22,7 +22,9 @@ import com.example.gigit.data.repository.UserRepository
 import com.example.gigit.data.source.UserSource
 import com.example.gigit.navigation.Screen
 import com.example.gigit.ui.components.ActiveTaskCard
+import com.example.gigit.util.Constants
 import com.google.firebase.Firebase
+import com.google.firebase.auth.auth
 import com.google.firebase.firestore.firestore
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
@@ -32,6 +34,7 @@ fun ActiveGigsScreen(mainNavController: NavController) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val pagerState = rememberPagerState(pageCount = { 2 })
     val scope = rememberCoroutineScope()
+    val currentUserId = Firebase.auth.currentUser?.uid
 
     // Sync pager state with ViewModel
     LaunchedEffect(uiState.selectedTabIndex) {
@@ -41,10 +44,7 @@ fun ActiveGigsScreen(mainNavController: NavController) {
         viewModel.onTabSelected(pagerState.currentPage)
     }
 
-    Scaffold(
-        topBar = { TopAppBar(title = { Text("Active Gigs", modifier = Modifier, fontSize = 22.sp) }) }
-    ) { paddingValues ->
-        Column(modifier = Modifier.padding(paddingValues)) {
+        Column(modifier = Modifier.padding(4.dp)) {
             TabRow(selectedTabIndex = uiState.selectedTabIndex) {
                 Tab(
                     selected = uiState.selectedTabIndex == 0,
@@ -75,17 +75,17 @@ fun ActiveGigsScreen(mainNavController: NavController) {
                         if (gigs.isEmpty()) {
                             EmptyState(page = page)
                         } else {
-                            GigsList(gigs = gigs, mainNavController = mainNavController)
+                            GigsList(gigs = gigs, mainNavController = mainNavController, currentUserId = currentUserId)
                         }
                     }
                 }
             }
         }
     }
-}
+
 
 @Composable
-private fun GigsList(gigs: List<Task>, mainNavController: NavController) {
+private fun GigsList(gigs: List<Task>, mainNavController: NavController, currentUserId: String?) {
     val userRepository = remember { UserRepository(UserSource(Firebase.firestore)) }
 
     LazyColumn(
@@ -96,7 +96,15 @@ private fun GigsList(gigs: List<Task>, mainNavController: NavController) {
             ActiveTaskCard(
                 task = task,
                 userRepository = userRepository,
-                onClick = { mainNavController.navigate(Screen.Chat.createRoute(task.id)) }
+                onClick = {
+                    if (task.status == Constants.TASK_STATUS_AWAITING_PAYMENT && task.posterId == currentUserId) {
+                        // If payment is pending and I am the poster, go directly to payment.
+                        mainNavController.navigate(Screen.Payment.createRoute(task.id))
+                    } else {
+                        // Otherwise, go to the chat screen.
+                        mainNavController.navigate(Screen.Chat.createRoute(task.id))
+                    }
+                }
             )
         }
     }

@@ -22,6 +22,7 @@ import com.example.gigit.R
 import com.example.gigit.data.model.Task
 import com.example.gigit.data.model.User
 import com.example.gigit.data.repository.UserRepository
+import com.example.gigit.util.Constants
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 
@@ -47,6 +48,14 @@ fun ActiveTaskCard(
         otherUser != null -> "Chat with ${otherUser?.username}"
         currentUserId == task.posterId -> "Chat with Tasker..." // Loading state
         else -> "Chat with ${task.posterUsername}"
+    }
+    val displayStatus = when {
+        task.status == Constants.TASK_STATUS_COMPLETED && task.paymentStatus == "SUCCESS" -> "Completed & Paid"
+        task.status == Constants.TASK_STATUS_AWAITING_PAYMENT && task.paymentStatus == "FAILED" -> "Payment Failed"
+        task.status == Constants.TASK_STATUS_AWAITING_PAYMENT -> "Awaiting Payment"
+        task.status == Constants.TASK_STATUS_RESERVED -> "In Progress"
+        task.status == Constants.TASK_STATUS_OPEN -> "Open"
+        else -> task.status.replaceFirstChar { it.titlecase() }
     }
 
     Card(
@@ -74,7 +83,7 @@ fun ActiveTaskCard(
                 )
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
-                    text = "Status: ${task.status}", // e.g., "Status: RESERVED"
+                    text = "Status: $displayStatus", // e.g., "Status: RESERVED"
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

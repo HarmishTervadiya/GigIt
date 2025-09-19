@@ -11,6 +11,7 @@ import com.example.gigit.data.repository.UserRepository
 import com.example.gigit.data.source.AuthSource
 import com.example.gigit.data.source.TaskSource
 import com.example.gigit.data.source.UserSource
+import com.example.gigit.util.Constants
 import com.example.gigit.util.Resource
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
@@ -51,6 +52,20 @@ class ActiveGigsViewModel(
             when (result) {
                 is Resource.Success -> {
                     val allGigs = result.data ?: emptyList()
+
+//                    // An active gig is one that is NOT fully completed AND paid for.
+//                    val trulyActiveGigs = allGigs.filterNot { task ->
+//                        task.status == Constants.TASK_STATUS_COMPLETED && task.paymentStatus == "SUCCESS"
+//                    }
+//
+//                    _uiState.update {
+//                        it.copy(
+//                            isLoading = false,
+//                            postedGigs = trulyActiveGigs.filter { task -> task.posterId == userId },
+//                            acceptedGigs = trulyActiveGigs.filter { task -> task.taskerId == userId }
+//                        )
+//                    }
+
                     _uiState.update {
                         it.copy(
                             isLoading = false,

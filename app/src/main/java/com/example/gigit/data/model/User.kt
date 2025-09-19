@@ -8,6 +8,7 @@ data class User(
     @DocumentId
     val uid: String = "",
     val username: String = "",
+    val email: String = "",
     val mobileNumber: String = "",
     val profileImageUrl: String = "",
     val upiId: String = "",

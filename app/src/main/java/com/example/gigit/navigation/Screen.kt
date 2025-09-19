@@ -19,6 +19,13 @@ sealed class Screen(val route: String, val arguments: List<NamedNavArgument> = e
     object Auth : Screen("auth_screen")
     object Main : Screen("main_screen") // Container for screens with the bottom nav bar
 
+    object Payment : Screen(
+        route = "payment_screen/{taskId}",
+        arguments = listOf(navArgument("taskId") { type = NavType.StringType })
+    ) {
+        fun createRoute(taskId: String) = "payment_screen/$taskId"
+    }
+
     // --- Screens accessible from the main graph that DON'T have a bottom nav bar ---
     object EditProfile : Screen("edit_profile_screen")
 

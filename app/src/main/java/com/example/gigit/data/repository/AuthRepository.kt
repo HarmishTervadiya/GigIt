@@ -24,7 +24,8 @@ class AuthRepository(
                 authResult.data?.let { firebaseUser ->
                     val newUser = User(
                         uid = firebaseUser.uid,
-                        username = username
+                        username = username,
+                        email = firebaseUser.email ?: ""
                     )
                     userRepository.createUserProfile(newUser)
                     Resource.Success(firebaseUser)

@@ -9,24 +9,43 @@ import com.example.gigit.features.auth.OnboardingScreen
 import com.example.gigit.features.auth.SplashScreen
 import com.example.gigit.features.chat.ChatScreen
 import com.example.gigit.features.main.MainScreen
+import com.example.gigit.features.payment.PaymentScreen
 import com.example.gigit.features.profile.EditProfileScreen
 import com.example.gigit.features.profile.UserProfileScreen
 import com.example.gigit.features.taskDetails.TaskDetailsScreen
 import com.example.gigit.ui.components.RouteGuard
 
 @Composable
-fun AppNavigation() {
+fun AppNavigation(startTaskId: String? = null) {
     val navController = rememberNavController()
 
-    NavHost(navController = navController, startDestination = Screen.Main.route) {
+    val startDestination = if (startTaskId != null) {
+        Screen.Payment.createRoute(startTaskId)
+    } else {
+        Screen.Splash.route
+    }
+
+    NavHost(navController = navController, startDestination = startDestination) {
         // --- Pre-Login Flow ---
-        composable(route = Screen.Splash.route) { SplashScreen(navController) }
+        composable(route = Screen.Splash.route) {
+            SplashScreen(navController = navController, startTaskId = startTaskId)
+        }
         composable(route = Screen.Onboarding.route) { OnboardingScreen(navController) }
         composable(route = Screen.Auth.route) { AuthScreen(navController) }
 
         // --- Post-Login Container ---
         composable(route = Screen.Main.route) {
             MainScreen(mainNavController = navController)
+        }
+
+        composable(route = Screen.Payment.route, arguments = Screen.Payment.arguments) { backStackEntry ->
+            RouteGuard(
+                argument = backStackEntry.arguments?.getString("taskId"),
+                navController = navController,
+                errorMessage = "Task for payment not found."
+            ) { taskId ->
+                PaymentScreen(taskId = taskId, navController = navController)
+            }
         }
 
         // --- Screens Without Bottom Nav Bar ---

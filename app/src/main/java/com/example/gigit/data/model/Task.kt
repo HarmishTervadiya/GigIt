@@ -16,7 +16,8 @@ data class Task(
     val rewardAmount: Double = 0.0,
     val status: String = "",
     val category: String = "Other",
-
+    val paymentStatus: String = "PENDING",
+    val razorpayPaymentId: String? = null,
     val posterId: String = "",
     val taskerId: String? = null, // Null until a tasker accepts
     val participantIds: List<String> = emptyList(), // For querying active gigs

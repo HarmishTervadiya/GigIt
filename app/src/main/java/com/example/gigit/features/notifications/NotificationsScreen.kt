@@ -21,7 +21,7 @@ fun NotificationsScreen(mainNavController: NavController) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Notifications") }) }
+//        topBar = { TopAppBar(title = { Text("Notifications") }) }
     ) { paddingValues ->
         when {
             uiState.isLoading -> {
@@ -36,7 +36,7 @@ fun NotificationsScreen(mainNavController: NavController) {
             }
             uiState.notifications.isEmpty() -> {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(text = "You have no notifications.")
+                    Text(text = "You do not have any notifications.")
                 }
             }
             else -> {

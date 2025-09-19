@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
 import com.example.gigit.data.model.Message
+import com.example.gigit.data.model.Review
 import com.example.gigit.data.model.Task
 import com.example.gigit.data.model.User
 import com.example.gigit.data.repository.AuthRepository
@@ -27,8 +28,9 @@ data class ChatUiState(
     val otherUser: User? = null,
     val messages: List<Message> = emptyList(),
     val error: String? = null,
-    val showPostGigDialog: Boolean = false,
-    val reviewSubmitted: Boolean = false
+    val showReviewSheet: Boolean = false,
+    val reviewSubmitted: Boolean = false,
+    val navigateToPayment: Boolean = false
 )
 
 class ChatViewModel(
@@ -44,6 +46,31 @@ class ChatViewModel(
     init {
         loadTaskAndUserDetails()
         listenForMessages()
+        listenForTaskUpdates()
+    }
+
+    private fun listenForTaskUpdates() {
+        taskRepository.getTaskDetailsFlow(taskId).onEach { result ->
+            if (result is Resource.Success && result.data != null) {
+                val task = result.data
+                if (_uiState.value.currentUser == null) {
+                    loadUserProfiles(task) // Fetch user profiles only on the first load
+                }
+                _uiState.update { it.copy(isLoading = false, task = task) }
+            } else if (result is Resource.Error) {
+                _uiState.update { it.copy(isLoading = false, error = result.message) }
+            }
+        }.launchIn(viewModelScope)
+    }
+
+    private fun loadUserProfiles(task: Task) {
+        viewModelScope.launch {
+            val currentUserId = authRepository.getCurrentUserId() ?: return@launch
+            val currentUserProfile = userRepository.getUserProfile(currentUserId)
+            val otherUserId = if (currentUserId == task.posterId) task.taskerId else task.posterId
+            val otherUserProfile = otherUserId?.let { userRepository.getUserProfile(it) }
+            _uiState.update { it.copy(currentUser = currentUserProfile, otherUser = otherUserProfile) }
+        }
     }
 
     private fun loadTaskAndUserDetails() {
@@ -83,6 +110,35 @@ class ChatViewModel(
         }.launchIn(viewModelScope)
     }
 
+    fun onLeaveReviewClicked() {
+        _uiState.update { it.copy(showReviewSheet = true) }
+    }
+
+    fun dismissReviewSheet() {
+        _uiState.update { it.copy(showReviewSheet = false) }
+    }
+
+    fun submitReview(rating: Int, comment: String, paymentSuccess: Boolean?) {
+        viewModelScope.launch {
+            val task = _uiState.value.task ?: return@launch
+            val currentUser = _uiState.value.currentUser ?: return@launch
+            val otherUser = _uiState.value.otherUser ?: return@launch
+
+            val review = Review(
+                taskId = taskId,
+                reviewerId = currentUser.uid,
+                revieweeId = otherUser.uid,
+                rating = rating,
+                comment = comment,
+                paymentCompletedSuccessfully = paymentSuccess
+            )
+            taskRepository.submitReview(review)
+            // Here you would also create notifications for the review
+            _uiState.update { it.copy(showReviewSheet = false, reviewSubmitted = true) }
+        }
+    }
+
+
     fun sendMessage(text: String) {
         val currentUserId = authRepository.getCurrentUserId()
         if (currentUserId == null || text.isBlank()) {
@@ -100,17 +156,15 @@ class ChatViewModel(
     }
 
     fun onMarkCompleteClicked() {
-        _uiState.update { it.copy(showPostGigDialog = true) }
+        viewModelScope.launch {
+            taskRepository.markTaskAsCompleted(taskId)
+        }
     }
 
-    fun dismissPostGigDialog() {
-        _uiState.update { it.copy(showPostGigDialog = false) }
+    fun onNavigateToPaymentHandled() {
+        _uiState.update { it.copy(navigateToPayment = false) }
     }
 
-    fun submitReviewAndComplaint(rating: Int, comment: String, fileComplaint: Boolean) {
-        // Here you would add the full backend logic for submitting review and complaint
-        _uiState.update { it.copy(showPostGigDialog = false, reviewSubmitted = true) }
-    }
 }
 
 class ChatViewModelFactory(private val taskId: String) : ViewModelProvider.Factory {

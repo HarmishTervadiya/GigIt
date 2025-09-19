@@ -64,6 +64,22 @@ class TaskSource(private val firestore: FirebaseFirestore) {
         }
     }
 
+    fun getTaskDetailsFlow(taskId: String): Flow<Resource<Task?>> = callbackFlow {
+        val docRef = firestore.collection(com.example.gigit.util.Constants.TASKS_COLLECTION).document(taskId)
+        val listener = docRef.addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                trySend(Resource.Error(error.localizedMessage))
+                return@addSnapshotListener
+            }
+            if (snapshot != null && snapshot.exists()) {
+                trySend(Resource.Success(snapshot.toObject(Task::class.java)))
+            } else {
+                trySend(Resource.Error("Task not found."))
+            }
+        }
+        awaitClose { listener.remove() }
+    }
+
     suspend fun acceptTask(taskId: String, taskerId: String): Resource<Unit> {
         return try {
             firestore.collection(Constants.TASKS_COLLECTION).document(taskId).update(
@@ -112,10 +128,9 @@ class TaskSource(private val firestore: FirebaseFirestore) {
     }
 
     fun getActiveGigs(userId: String): Flow<Resource<List<Task>>> = callbackFlow {
-
         val listener = firestore.collection(Constants.TASKS_COLLECTION)
-            .whereEqualTo("status", Constants.TASK_STATUS_RESERVED) // Find only active tasks
-            .whereArrayContains("participantIds", userId) // Where the user is a participant
+//            .whereNotIn("status", listOf(Constants.TASK_STATUS_CANCELLED, Constants.TASK_STATUS_EXPIRED))
+            .whereArrayContains("participantIds", userId)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     trySend(Resource.Error(error.localizedMessage ?: "Failed to listen for active gigs."))
@@ -132,10 +147,10 @@ class TaskSource(private val firestore: FirebaseFirestore) {
     suspend fun markTaskAsCompleted(taskId: String): Resource<Unit> {
         return try {
             firestore.collection(Constants.TASKS_COLLECTION).document(taskId)
-                .update(
-                    "status", Constants.TASK_STATUS_COMPLETED,
+                .update(mapOf(
+                    "status" to Constants.TASK_STATUS_COMPLETED,
                     "completedAt" to FieldValue.serverTimestamp()
-                ).await()
+                )).await()
             Resource.Success(Unit)
         } catch (e: Exception) {
             Resource.Error(e.localizedMessage)
@@ -163,5 +178,19 @@ class TaskSource(private val firestore: FirebaseFirestore) {
                 }
             }
         awaitClose { listener.remove() }
+    }
+
+    suspend fun updatePaymentStatus(taskId: String, status: String, paymentId: String?): Resource<Unit> {
+        return try {
+            val updates = mapOf(
+                "paymentStatus" to status,
+                "razorpayPaymentId" to paymentId
+            )
+            firestore.collection(Constants.TASKS_COLLECTION).document(taskId)
+                .update(updates).await()
+            Resource.Success(Unit)
+        } catch (e: Exception) {
+            Resource.Error(e.localizedMessage)
+        }
     }
 }

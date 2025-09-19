@@ -23,6 +23,10 @@ class TaskRepository(private val source: TaskSource) {
         return source.getTaskDetails(taskId)
     }
 
+    fun getTaskDetailsFlow(taskId: String): Flow<Resource<Task?>> {
+        return source.getTaskDetailsFlow(taskId)
+    }
+
     suspend fun acceptTask(taskId: String, taskerId: String): Resource<Unit> {
         return source.acceptTask(taskId, taskerId)
     }
@@ -50,4 +54,10 @@ class TaskRepository(private val source: TaskSource) {
     fun getReviewsForUser(userId: String): Flow<Resource<List<Review>>> {
         return source.getReviewsForUser(userId)
     }
+
+    suspend fun updatePaymentStatus(taskId: String, status: String, paymentId: String?): Resource<Unit> {
+        return source.updatePaymentStatus(taskId, status, paymentId)
+    }
+
+
 }

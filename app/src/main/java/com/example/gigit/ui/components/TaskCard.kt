@@ -19,6 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.example.gigit.R
 import com.example.gigit.data.model.Task
 
 // Define your colors here (move these to your Colors.kt file)
@@ -164,24 +165,34 @@ fun TaskCard(
                         )
                     }
                 }
-
-                // Task Image (if available)
-                if (!task.imageUrl.isNullOrBlank()) {
-                    Spacer(modifier = Modifier.width(12.dp))
-
+                Box(
+                    modifier = Modifier
+                        .size(72.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .border(1.dp, BorderGray, RoundedCornerShape(8.dp))
+                        .background(BackgroundGray),
+                    contentAlignment = Alignment.Center
+                ) {
                     AsyncImage(
-                        model = task.imageUrl,
+                        model = task.imageUrl?.takeIf { it.isNotBlank() },
                         contentDescription = task.title,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier
-                            .size(80.dp)
+                            .fillMaxSize()
                             .clip(RoundedCornerShape(8.dp))
-                            .border(
-                                1.dp,
-                                BorderGray,
-                                RoundedCornerShape(8.dp)
-                            )
                     )
+
+                    // Fallback icon when no image
+                    if (task.imageUrl.isNullOrBlank()) {
+                        AsyncImage(
+                            model = R.drawable.onboarding_image_2,
+                            contentDescription = task.title,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(RoundedCornerShape(8.dp))
+                        )
+                    }
                 }
             }
         }

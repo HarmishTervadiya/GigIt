@@ -11,6 +11,7 @@ object Constants {
     // Task Statuses
     const val TASK_STATUS_OPEN = "OPEN"
     const val TASK_STATUS_RESERVED = "RESERVED"
+    const val TASK_STATUS_AWAITING_PAYMENT = "PENDING"
     const val TASK_STATUS_COMPLETED = "COMPLETED"
     const val TASK_STATUS_CANCELLED = "CANCELLED"
     const val TASK_STATUS_EXPIRED = "EXPIRED"

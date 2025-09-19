@@ -1,5 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
+    <style name="RazorpayTheme" parent="Theme.AppCompat.Light.NoActionBar">
+        <!--
+            This is the primary color that will be used for the header and other
+            UI elements within the Razorpay checkout window.
+            You should replace this with your app's primary brand color.
+        -->
+        <item name="colorPrimary">#3A86FF</item>
+        <item name="colorPrimaryDark">#3A86FF</item>
+        <item name="colorAccent">#3A86FF</item>
+    </style>
     <style name="Theme.GigIt" parent="android:Theme.Material.Light.NoActionBar" />
 </resources>

@@ -12,6 +12,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.HourglassEmpty
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.TaskAlt
 import androidx.compose.material.icons.filled.Timer
@@ -34,6 +35,9 @@ import com.example.gigit.data.model.Task
 import com.example.gigit.data.model.User
 import com.example.gigit.util.Constants
 import androidx.core.net.toUri
+import com.example.gigit.navigation.Screen
+import com.example.gigit.ui.components.ReviewSheetContent
+import com.example.gigit.ui.components.White
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,16 +48,48 @@ fun ChatScreen(
     val viewModel: ChatViewModel = viewModel(factory = ChatViewModelFactory(taskId))
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
+    val context = LocalContext.current
 
-    if (uiState.showPostGigDialog && uiState.task != null && uiState.currentUser != null) {
-        PostGigDialog(
-            task = uiState.task!!,
-            currentUserId = uiState.currentUser!!.uid,
-            onDismiss = { viewModel.dismissPostGigDialog() },
-            onSubmit = { rating, comment, complain ->
-                viewModel.submitReviewAndComplaint(rating, comment, complain)
+    val task = uiState.task
+    val isPoster = uiState.currentUser?.uid == uiState.task?.posterId
+    val isTasker = uiState.currentUser?.uid == task?.taskerId
+    val isTaskFullyCompleted = task?.status == Constants.TASK_STATUS_COMPLETED && task.paymentStatus == "SUCCESS"
+
+    LaunchedEffect(task?.status, task?.paymentStatus, isPoster) {
+        if (task?.status == Constants.TASK_STATUS_COMPLETED &&
+            (task.paymentStatus == "PENDING" || task.paymentStatus == "FAILED") &&
+            isPoster
+        ) {
+            navController.navigate(Screen.Payment.createRoute(taskId)) {
+                popUpTo(Screen.Chat.createRoute(taskId)) { inclusive = true }
             }
-        )
+        }
+    }
+
+//    if (uiState.showPostGigDialog && uiState.task != null && uiState.currentUser != null) {
+//        PostGigDialog(
+//            task = uiState.task!!,
+//            currentUserId = uiState.currentUser!!.uid,
+//            onDismiss = { viewModel.dismissPostGigDialog() },
+//            onSubmit = { rating, comment, complain ->
+//                viewModel.submitReviewAndComplaint(rating, comment, complain)
+//            }
+//        )
+//    }
+
+    if (uiState.showReviewSheet && uiState.otherUser != null) {
+        ModalBottomSheet(
+            onDismissRequest = { viewModel.dismissReviewSheet() },
+            containerColor = White
+        ) {
+            ReviewSheetContent(
+                userToReview = uiState.otherUser!!,
+                isTasker = isTasker,
+                onSubmitReview = { rating, comment, paymentSuccess ->
+                    viewModel.submitReview(rating, comment, paymentSuccess)
+                }
+            )
+        }
     }
 
     LaunchedEffect(uiState.messages.size) {
@@ -72,7 +108,20 @@ fun ChatScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = {  }) {
+                    if (isTaskFullyCompleted) {
+                        TextButton(onClick = { viewModel.onLeaveReviewClicked() }) {
+                            Text("Leave a Review")
+                        }
+                    }
+                    IconButton(onClick = {
+                        val mobileNumber = uiState.otherUser?.mobileNumber
+                        if (!mobileNumber.isNullOrBlank()) {
+                            val intent = Intent(Intent.ACTION_DIAL).apply {
+                                data = Uri.parse("tel:$mobileNumber")
+                            }
+                            context.startActivity(intent)
+                        }
+                    }) {
                         Icon(Icons.Default.Phone, contentDescription = "Call")
                     }
                 }
@@ -88,7 +137,8 @@ fun ChatScreen(
             TaskStatusBar(
                 taskStatus = uiState.task?.status ?: "",
                 isTasker = uiState.currentUser?.uid == uiState.task?.taskerId,
-                onMarkCompleteClick = { viewModel.onMarkCompleteClicked() }
+                onMarkCompleteClick = { viewModel.onMarkCompleteClicked() },
+                paymentStatus = task?.paymentStatus ?: "PENDING"
             )
 
             // Main chat content with weight to take available space
@@ -119,10 +169,13 @@ fun ChatScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .fillMaxHeight()
-                            .weight(1f), // Takes remaining space above input
+                            .weight(1f)
+
+                        , // Takes remaining space above input
                         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp), // Reduced from 12dp
-                        reverseLayout = false
+                        reverseLayout = false,
+
                     ) {
                         items(uiState.messages, key = { it.timestamp.toString() }) { message ->
                             MessageBubble(
@@ -141,18 +194,23 @@ fun ChatScreen(
             }
 
             // Input bar at bottom - always visible
-            ChatInputBar(
-                onSendMessage = {
-                    viewModel.sendMessage(it)
-                    // Auto-scroll to bottom when sending message
-//                    LaunchedEffect(Unit) {
-//                    if (uiState.messages.isNotEmpty()) {
-//
-//                            listState.animateScrollToItem(uiState.messages.size)
-//                        }
-//                    }
+            if (task != null) {
+                if(task.paymentStatus != "SUCCESS" && task.status != Constants.TASK_STATUS_COMPLETED) {
+
+                    ChatInputBar(
+                        onSendMessage = {
+                            viewModel.sendMessage(it)
+                            // Auto-scroll to bottom when sending message
+        //                    LaunchedEffect(Unit) {
+        //                    if (uiState.messages.isNotEmpty()) {
+        //
+        //                            listState.animateScrollToItem(uiState.messages.size)
+        //                        }
+        //                    }
+                        }
+                    )
                 }
-            )
+            }
 
             LaunchedEffect(uiState.messages.size) {
                 if (uiState.messages.isNotEmpty()) {
@@ -166,6 +224,7 @@ fun ChatScreen(
 @Composable
 private fun TaskStatusBar(
     taskStatus: String,
+    paymentStatus: String,
     isTasker: Boolean,
     onMarkCompleteClick: () -> Unit
 ) {
@@ -173,21 +232,32 @@ private fun TaskStatusBar(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 10.dp), // Reduced from 12dp
+                .padding(horizontal = 16.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Timer, contentDescription = "Status", modifier = Modifier.size(18.dp)) // Reduced from 20dp
-                Spacer(modifier = Modifier.width(6.dp)) // Reduced from 8dp
-                Text("Task in progress", fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyMedium)
+                val statusText = when {
+                    taskStatus == Constants.TASK_STATUS_COMPLETED && paymentStatus == "SUCCESS" -> "Task & Payment Complete"
+                    taskStatus == Constants.TASK_STATUS_AWAITING_PAYMENT -> "Awaiting Payment"
+                    taskStatus == Constants.TASK_STATUS_RESERVED -> "Task in progress"
+                    else -> "Task Active"
+                }
+                val statusIcon = when {
+                    taskStatus == Constants.TASK_STATUS_COMPLETED && paymentStatus == "SUCCESS" -> Icons.Default.TaskAlt
+                    taskStatus == Constants.TASK_STATUS_AWAITING_PAYMENT -> Icons.Default.HourglassEmpty
+                    else -> Icons.Default.Timer
+                }
+
+                Icon(statusIcon, contentDescription = "Status", modifier = Modifier.size(18.dp))
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(statusText, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyMedium)
             }
+
             if (isTasker && taskStatus == Constants.TASK_STATUS_RESERVED) {
                 TextButton(onClick = onMarkCompleteClick) {
                     Text("Mark Complete")
                 }
-            } else {
-                Icon(Icons.Default.TaskAlt, contentDescription = "Completed Check", tint = MaterialTheme.colorScheme.outline)
             }
         }
     }

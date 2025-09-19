@@ -17,7 +17,7 @@ import androidx.navigation.NavController
 import com.example.gigit.navigation.Screen
 
 @Composable
-fun SplashScreen(navController: NavController) {
+fun SplashScreen(navController: NavController, startTaskId: String?, ) {
     val context = LocalContext.current
     val viewModel: SplashViewModel = viewModel(factory = SplashViewModelFactory(context))
     val navigateState by viewModel.navigateState.collectAsStateWithLifecycle()
